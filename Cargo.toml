@@ -1,0 +1,10 @@
+[package]
+name = "nsh-logging"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = "Local log files with rotation and bounded disk use."
+repository = "https://github.com/SuperNSH/logging"
+publish = false
+
+[dependencies]
