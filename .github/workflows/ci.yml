@@ -1,6 +1,8 @@
 name: CI
 
 # Every compile and test runs here, on GitHub's runners, never on a developer's machine.
+# kache caches compiler outputs in GitHub's Actions cache; only master saves to it.
+# site/ is published by pages.yml, not here: this repo has no demo app to package.
 
 on:
   push:
@@ -18,17 +20,101 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
+  # The org template's list, kept whole: the crate links NSH's platform stack on Linux.
+  LINUX_PACKAGES: dbus dbus-user-session gnome-keyring libgtk-4-dev libwebkitgtk-6.0-dev clang llvm
 
 jobs:
-  rust:
+  format:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
           toolchain: stable
-          components: rustfmt, clippy
+          components: rustfmt
       - run: cargo fmt --all -- --check
-      - run: cargo clippy --all-targets -- -D warnings
-      - run: cargo test --all-targets
+
+  rust:
+    name: rust (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
+        with:
+          version: v2.0.0
+          cache-dir: ${{ runner.temp }}/kache
+          manifest-key: rust-${{ matrix.os }}
+          cache-key-prefix: kache-rust-${{ matrix.os }}
+          save-cache: ${{ github.ref == 'refs/heads/master' }}
+          pr-comment: false
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y $LINUX_PACKAGES
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: cargo test --all-features --no-fail-fast
+
+  cross-check:
+    name: check (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest, target: aarch64-apple-ios }
+          - { os: macos-latest, target: aarch64-apple-ios-sim }
+          - { os: ubuntu-latest, target: aarch64-linux-android }
+          - { os: ubuntu-latest, target: wasm32-unknown-unknown }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: stable
+          components: clippy
+          targets: ${{ matrix.target }}
+      - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
+        with:
+          version: v2.0.0
+          cache-dir: ${{ runner.temp }}/kache
+          manifest-key: check-${{ matrix.target }}
+          cache-key-prefix: kache-check-${{ matrix.target }}
+          save-cache: ${{ github.ref == 'refs/heads/master' }}
+          pr-comment: false
+      - name: Point cc at the NDK
+        if: matrix.target == 'aarch64-linux-android'
+        run: |
+          bin="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          echo "CC_aarch64_linux_android=$bin/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
+          echo "AR_aarch64_linux_android=$bin/llvm-ar" >> "$GITHUB_ENV"
+          echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$bin/aarch64-linux-android24-clang" >> "$GITHUB_ENV"
+      - run: cargo clippy --target ${{ matrix.target }} --all-features -- -D warnings
+
+  typescript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install NSH
+        env:
+          NSH_VERSION: v0.4.0
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/SuperNSH/nsh-builds/master/install.sh | sh
+          echo "$HOME/.nsh/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Check, build and test
+        working-directory: packages/nsh-logging
+        run: |
+          nsh check
+          nsh build 2>&1 | tee build.log
+          ! grep -i warn build.log
+          nsh test

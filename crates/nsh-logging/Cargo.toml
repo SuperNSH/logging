@@ -1,0 +1,31 @@
+[package]
+name = "nsh-logging"
+description = "Local log files with rotation, bounded disk use and redaction for Native Shell apps"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+name = "nsh_logging"
+path = "src/lib.rs"
+
+[dependencies]
+nsh-core = "0.4.0"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", default-features = false, features = ["sync", "time"] }
+
+# The writer: time rotation and the non-blocking worker. Its `symlink` dependency has no
+# wasm story, and the web has no file sink, so the whole dependency stays off wasm32.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tracing-appender = "0.2.5"
+
+# Android: the app's log directory comes from its context over JNI; ndk-context carries it.
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.22.4"
+ndk-context = "0.1.1"
+
+[dev-dependencies]
+tokio = { version = "1.54.1", default-features = false, features = ["rt", "time", "test-util", "macros"] }
