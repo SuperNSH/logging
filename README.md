@@ -34,7 +34,7 @@ Every compile and test runs in GitHub Actions. Nothing is built on a developer m
 - **format**: `cargo fmt --all -- --check`.
 - **rust**: a matrix of ubuntu-latest, macos-latest and windows-latest running `cargo clippy --all-targets --all-features -- -D warnings` and `cargo test --all-features --no-fail-fast`. The file-writing tests run on the runners' real filesystems, which is the same code iOS and Android run; CI has no device.
 - **cross-check**: Clippy for `aarch64-apple-ios` and `aarch64-apple-ios-sim` on macOS, `aarch64-linux-android` on Ubuntu with the NDK toolchain, and `wasm32-unknown-unknown` on Ubuntu, each with `--all-features -- -D warnings`.
-- **typescript**: installs NSH 0.4.0 and, in `packages/nsh-logging`, runs `nsh check`, `nsh build` failing on any warning, and `nsh test`.
+- **typescript**: installs NSH 0.5.0 and, in `packages/nsh-logging`, runs `nsh check`, `nsh build` failing on any warning, and `nsh test`.
 
 There is no demo or publish job: this repo has no demo app. `site/` is published by the separate `.github/workflows/pages.yml`. Until a run of these jobs is green, every status claim above is unverified.
 
