@@ -24,7 +24,7 @@ use tracing_appender::{
 use crate::{
     backend::{Backend, BackendFuture, FileStat},
     error::{ErrorKind, LoggingError},
-    logging::{format_line, LogEntry},
+    logging::{LogEntry, format_line},
     options::{LoggingOptions, Rotation},
 };
 
@@ -111,7 +111,10 @@ impl NativeBackend {
             .lossy(true)
             .thread_name("nsh-logging")
             .finish(appender);
-        state.pair = Some(WriterPair { writer, _guard: guard });
+        state.pair = Some(WriterPair {
+            writer,
+            _guard: guard,
+        });
         state.written = written;
         state.file_name = file_name;
         Ok(())
@@ -153,7 +156,9 @@ impl NativeBackend {
         // rise across this write is this line's fate: a full buffer or a dead worker
         // drops the line and fails the append instead of blocking the caller forever.
         let dropped = pair.writer.error_counter().dropped_lines();
-        pair.writer.write_all(line.as_bytes()).map_err(LoggingError::from_io)?;
+        pair.writer
+            .write_all(line.as_bytes())
+            .map_err(LoggingError::from_io)?;
         if pair.writer.error_counter().dropped_lines() > dropped {
             return Err(LoggingError::new(ErrorKind::Backend));
         }
@@ -273,7 +278,10 @@ fn logs_dir(appdata: Option<&OsStr>) -> Result<PathBuf, LoggingError> {
 
 /// The builder's error carries the io error that caused it; that error keeps its kind.
 fn init_error(error: InitError) -> LoggingError {
-    match error.source().and_then(|source| source.downcast_ref::<io::Error>()) {
+    match error
+        .source()
+        .and_then(|source| source.downcast_ref::<io::Error>())
+    {
         Some(error) => LoggingError::from_io(error.clone()),
         None => LoggingError::new(ErrorKind::Backend),
     }
@@ -296,7 +304,9 @@ fn interval_file_name(rotation: Rotation, prefix: &str) -> String {
 /// Seconds since the epoch; a clock set before 1970 reads as the epoch, like `now_ms`. The
 /// cast saturates, so a clock far past 1970 cannot wrap either.
 fn unix_seconds() -> i64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |passed| passed.as_secs() as i64)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |passed| passed.as_secs() as i64)
 }
 
 /// The naming rule: the prefix, a dot, then the UTC date rounded down to the rotation's
@@ -313,7 +323,10 @@ fn file_name_at(rotation: Rotation, prefix: &str, secs: i64) -> String {
                 time_of_day / SECS_PER_HOUR
             );
             if rotation == Rotation::Minutely {
-                format!("{name}-{:02}", time_of_day / SECS_PER_MINUTE % SECS_PER_MINUTE)
+                format!(
+                    "{name}-{:02}",
+                    time_of_day / SECS_PER_MINUTE % SECS_PER_MINUTE
+                )
             } else {
                 name
             }
@@ -325,7 +338,11 @@ fn file_name_at(rotation: Rotation, prefix: &str, secs: i64) -> String {
 /// Gregorian calendar the `time` crate names `tracing-appender`'s files by, leap days included.
 fn civil_from_days(days: i64) -> (i64, u32, u32) {
     let shifted = days + 719_468;
-    let era = if shifted >= 0 { shifted } else { shifted - 146_096 } / 146_097;
+    let era = if shifted >= 0 {
+        shifted
+    } else {
+        shifted - 146_096
+    } / 146_097;
     let day_of_era = shifted - era * 146_097;
     let year_of_era =
         (day_of_era - day_of_era / 1460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
@@ -333,8 +350,16 @@ fn civil_from_days(days: i64) -> (i64, u32, u32) {
     let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
     let month_pattern = (5 * day_of_year + 2) / 153;
     let day = day_of_year - (153 * month_pattern + 2) / 5 + 1;
-    let month = if month_pattern < 10 { month_pattern + 3 } else { month_pattern - 9 };
-    (if month <= 2 { year + 1 } else { year }, month as u32, day as u32)
+    let month = if month_pattern < 10 {
+        month_pattern + 3
+    } else {
+        month_pattern - 9
+    };
+    (
+        if month <= 2 { year + 1 } else { year },
+        month as u32,
+        day as u32,
+    )
 }
 
 /// `{name}.{index}` for the first index no file in the directory holds.
@@ -368,25 +393,49 @@ mod tests {
     fn interval_names_spell_dates_as_tracing_appender_does() {
         assert_eq!(file_name_at(Rotation::Never, "log", 0), "log");
         assert_eq!(file_name_at(Rotation::Daily, "log", 0), "log.1970-01-01");
-        assert_eq!(file_name_at(Rotation::Hourly, "log", 0), "log.1970-01-01-00");
-        assert_eq!(file_name_at(Rotation::Minutely, "log", 0), "log.1970-01-01-00-00");
-        assert_eq!(file_name_at(Rotation::Minutely, "log", 1_582_981_500), "log.2020-02-29-13-05");
-        assert_eq!(file_name_at(Rotation::Hourly, "log", 1_582_981_500), "log.2020-02-29-13");
+        assert_eq!(
+            file_name_at(Rotation::Hourly, "log", 0),
+            "log.1970-01-01-00"
+        );
+        assert_eq!(
+            file_name_at(Rotation::Minutely, "log", 0),
+            "log.1970-01-01-00-00"
+        );
+        assert_eq!(
+            file_name_at(Rotation::Minutely, "log", 1_582_981_500),
+            "log.2020-02-29-13-05"
+        );
+        assert_eq!(
+            file_name_at(Rotation::Hourly, "log", 1_582_981_500),
+            "log.2020-02-29-13"
+        );
     }
 
     #[test]
     fn february_twenty_ninth_exists_only_in_leap_years() {
-        assert_eq!(file_name_at(Rotation::Daily, "log", 951_782_400), "log.2000-02-29");
+        assert_eq!(
+            file_name_at(Rotation::Daily, "log", 951_782_400),
+            "log.2000-02-29"
+        );
         // 2100 is not a leap year: the day after its February 28 is March 1.
-        assert_eq!(file_name_at(Rotation::Daily, "log", 4_107_456_000), "log.2100-02-28");
-        assert_eq!(file_name_at(Rotation::Daily, "log", 4_107_542_400), "log.2100-03-01");
+        assert_eq!(
+            file_name_at(Rotation::Daily, "log", 4_107_456_000),
+            "log.2100-02-28"
+        );
+        assert_eq!(
+            file_name_at(Rotation::Daily, "log", 4_107_542_400),
+            "log.2100-03-01"
+        );
     }
 
     #[test]
     fn the_default_directory_sits_under_roaming_appdata() {
         let appdata = OsStr::new(r"C:\Users\u\AppData\Roaming");
         let directory = logs_dir(Some(appdata)).unwrap();
-        assert_eq!(directory, PathBuf::from(r"C:\Users\u\AppData\Roaming\nsh-logging\logs"));
+        assert_eq!(
+            directory,
+            PathBuf::from(r"C:\Users\u\AppData\Roaming\nsh-logging\logs")
+        );
         let refused = logs_dir(Some(OsStr::new(""))).unwrap_err();
         assert_eq!(refused.code(), "ERR_LOGGING_INVALID_ARGUMENT");
         let refused = logs_dir(None).unwrap_err();

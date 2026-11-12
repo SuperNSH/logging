@@ -50,7 +50,9 @@ impl Backend for RecordingBackend {
 #[tokio::test]
 async fn each_level_names_itself_and_the_filter_drops_lower_levels() {
     let backend = FakeBackend::new();
-    let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
 
     logger.debug("d").await.unwrap();
     logger.info("i").await.unwrap();
@@ -65,7 +67,9 @@ async fn each_level_names_itself_and_the_filter_drops_lower_levels() {
     let strict_backend = FakeBackend::new();
     let mut strict_options = options();
     strict_options.level = Level::Warning;
-    let strict = Logging::with_backend(strict_backend.clone(), &strict_options).await.unwrap();
+    let strict = Logging::with_backend(strict_backend.clone(), &strict_options)
+        .await
+        .unwrap();
     strict.debug("dropped").await.unwrap();
     strict.info("dropped").await.unwrap();
     assert_eq!(strict_backend.appends(), 0);
@@ -96,9 +100,14 @@ async fn each_level_names_itself_and_the_filter_drops_lower_levels() {
 #[tokio::test]
 async fn log_exception_records_the_failure_and_its_stack() {
     let backend = FakeBackend::new();
-    let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
 
-    logger.log_exception("payment failed", Some("at checkout")).await.unwrap();
+    logger
+        .log_exception("payment failed", Some("at checkout"))
+        .await
+        .unwrap();
     logger.log_exception("bare failure", None).await.unwrap();
 
     let entries = logger.logs().await.unwrap();
@@ -113,12 +122,17 @@ async fn log_exception_records_the_failure_and_its_stack() {
 #[tokio::test]
 async fn the_written_line_carries_the_level_the_timestamp_and_the_message() {
     let backend = FakeBackend::new();
-    let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
 
     logger.info("ordered").await.unwrap();
 
     let entries = logger.logs().await.unwrap();
-    assert_eq!(backend.lines(), [format!("info {} ordered", entries[0].time_ms)]);
+    assert_eq!(
+        backend.lines(),
+        [format!("info {} ordered", entries[0].time_ms)]
+    );
 }
 
 #[tokio::test]
@@ -126,7 +140,9 @@ async fn the_backend_receives_structured_writes() {
     let backend = RecordingBackend::default();
     let mut options = options();
     options.redact = vec!["card".to_owned()];
-    let logger = Logging::with_backend(backend.clone(), &options).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options)
+        .await
+        .unwrap();
 
     logger.info("card: 4242424242424242").await.unwrap();
     logger.error("burst").await.unwrap();

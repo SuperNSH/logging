@@ -2,7 +2,10 @@
 //! that frees a stuck write, and a drain when the last owner goes.
 
 use std::{
-    sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering::SeqCst}},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, AtomicUsize, Ordering::SeqCst},
+    },
     time::Duration,
 };
 
@@ -152,7 +155,9 @@ impl Backend for ProbingBackend {
 #[tokio::test]
 async fn dropping_the_guard_flushes_every_buffered_write() {
     let backend = FakeBackend::new();
-    let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
     logger.debug("first").await.unwrap();
     logger.info("second").await.unwrap();
     logger.warning("third").await.unwrap();
@@ -160,7 +165,11 @@ async fn dropping_the_guard_flushes_every_buffered_write() {
 
     let keeper = logger.clone();
     drop(logger);
-    assert_eq!(backend.flushes(), 0, "a remaining owner keeps the writer open");
+    assert_eq!(
+        backend.flushes(),
+        0,
+        "a remaining owner keeps the writer open"
+    );
 
     // The last owner's drop polls the flush once: every buffered line has been handed over.
     drop(keeper);
@@ -171,7 +180,9 @@ async fn dropping_the_guard_flushes_every_buffered_write() {
 #[tokio::test]
 async fn concurrent_writes_are_serialized_and_each_resolves_once() {
     let backend = ProbingBackend::default();
-    let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
 
     let writes: Vec<_> = (0..25)
         .map(|index| {
@@ -207,7 +218,9 @@ async fn a_write_past_its_deadline_resolves_with_the_timeout_code() {
     let backend = StuckBackend::wedged();
     let mut options = options();
     options.write_timeout = Some(Duration::from_millis(5));
-    let logger = Logging::with_backend(backend.clone(), &options).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options)
+        .await
+        .unwrap();
 
     let stuck = {
         let logger = logger.clone();
@@ -232,7 +245,9 @@ async fn a_write_past_its_deadline_resolves_with_the_timeout_code() {
 #[tokio::test]
 async fn cancel_resolves_the_pending_write_exactly_once_as_cancelled() {
     let backend = FakeBackend::new();
-    let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
 
     backend.fail_next_append(LoggingError::new(ErrorKind::Cancelled));
     let error = logger.warning("dropped before the disk").await.unwrap_err();

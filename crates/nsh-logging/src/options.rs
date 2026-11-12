@@ -92,7 +92,10 @@ impl Default for LoggingOptions {
             max_file_size_bytes: None,
             max_total_size_bytes: None,
             max_age: None,
-            redact: DEFAULT_REDACT.iter().map(|field| (*field).to_owned()).collect(),
+            redact: DEFAULT_REDACT
+                .iter()
+                .map(|field| (*field).to_owned())
+                .collect(),
             write_timeout: None,
         }
     }
@@ -127,7 +130,10 @@ fn default_directory() -> String {
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        std::env::temp_dir().join("nsh-logging").to_string_lossy().into_owned()
+        std::env::temp_dir()
+            .join("nsh-logging")
+            .to_string_lossy()
+            .into_owned()
     }
 }
 
@@ -154,7 +160,10 @@ mod tests {
         assert_eq!(options.write_timeout, None);
         assert_eq!(
             options.redact,
-            DEFAULT_REDACT.iter().map(|field| (*field).to_owned()).collect::<Vec<_>>()
+            DEFAULT_REDACT
+                .iter()
+                .map(|field| (*field).to_owned())
+                .collect::<Vec<_>>()
         );
     }
 
@@ -162,7 +171,10 @@ mod tests {
     fn zero_caps_and_timeouts_are_refused() {
         let mut options = options();
         options.max_file_size_bytes = Some(0);
-        assert_eq!(options.validate().unwrap_err().code(), "ERR_LOGGING_INVALID_ARGUMENT");
+        assert_eq!(
+            options.validate().unwrap_err().code(),
+            "ERR_LOGGING_INVALID_ARGUMENT"
+        );
         options.max_file_size_bytes = None;
         options.max_total_size_bytes = Some(0);
         assert!(options.validate().is_err());

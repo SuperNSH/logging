@@ -23,7 +23,9 @@ fn stored(name: &str) -> FileStat {
 #[tokio::test]
 async fn logs_returns_the_recent_entries_in_order() {
     let backend = FakeBackend::new();
-    let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
 
     logger.debug("first").await.unwrap();
     logger.info("second").await.unwrap();
@@ -59,7 +61,9 @@ async fn logs_returns_the_recent_entries_in_order() {
 async fn clean_empties_the_logs_and_the_files() {
     let backend = FakeBackend::new();
     backend.set_files(vec![stored("log.2026-11-08"), stored("log.2026-11-09")]);
-    let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
 
     logger.info("one").await.unwrap();
     logger.info("two").await.unwrap();

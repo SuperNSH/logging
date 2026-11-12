@@ -12,13 +12,21 @@ fn options() -> LoggingOptions {
 #[tokio::test]
 async fn tokens_and_personal_fields_are_masked_before_anything_is_written() {
     let backend = FakeBackend::new();
-    let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
 
     logger.info("password: hunter2").await.unwrap();
-    logger.error("the session token was eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9x9").await.unwrap();
+    logger
+        .error("the session token was eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9x9")
+        .await
+        .unwrap();
     logger.warning("secret: shhh").await.unwrap();
     logger.info("authorization: sesame").await.unwrap();
-    logger.debug("email: ada@example.com phone: 555-0100").await.unwrap();
+    logger
+        .debug("email: ada@example.com phone: 555-0100")
+        .await
+        .unwrap();
 
     let entries = logger.logs().await.unwrap();
     let expected = [
@@ -46,7 +54,9 @@ async fn tokens_and_personal_fields_are_masked_before_anything_is_written() {
     let open_backend = FakeBackend::new();
     let mut open_options = options();
     open_options.redact = Vec::new();
-    let open = Logging::with_backend(open_backend.clone(), &open_options).await.unwrap();
+    let open = Logging::with_backend(open_backend.clone(), &open_options)
+        .await
+        .unwrap();
     open.info("password: hunter2").await.unwrap();
     let entries = open.logs().await.unwrap();
     assert_eq!(entries[0].message, "password: hunter2");

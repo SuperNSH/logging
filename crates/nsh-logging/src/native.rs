@@ -6,10 +6,10 @@ use std::{sync::Arc, time::Duration};
 use nsh_core::prelude::*;
 
 use crate::{
+    Logging, LoggingError,
     error::ErrorKind,
     logging::LogEntry,
     options::{Level, LoggingOptions, Rotation},
-    Logging, LoggingError,
 };
 
 /// The options of one logger, from TSX. Unset fields keep the defaults.

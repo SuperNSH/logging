@@ -46,7 +46,11 @@ const ALL_KINDS: [(ErrorKind, &str, &str); 8] = [
         "ERR_LOGGING_NOT_FOUND",
         "The log file is gone: it was rotated away or cleared.",
     ),
-    (ErrorKind::Backend, "ERR_LOGGING_BACKEND", "The platform's file service failed."),
+    (
+        ErrorKind::Backend,
+        "ERR_LOGGING_BACKEND",
+        "The platform's file service failed.",
+    ),
 ];
 
 #[test]
@@ -65,11 +69,17 @@ fn every_kind_carries_its_code_and_its_message() {
 #[tokio::test]
 async fn filesystem_failures_map_to_their_codes() {
     let backend = FakeBackend::new();
-    let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
 
     // A scripted disk answers full, denied and missing; each write keeps its code and
     // records nothing.
-    for kind in [ErrorKind::DiskFull, ErrorKind::PermissionDenied, ErrorKind::NotFound] {
+    for kind in [
+        ErrorKind::DiskFull,
+        ErrorKind::PermissionDenied,
+        ErrorKind::NotFound,
+    ] {
         backend.fail_next_append(LoggingError::new(kind));
         let error = logger.error("burst").await.unwrap_err();
         assert_eq!(error.code(), kind.code());

@@ -3,12 +3,15 @@
 
 use std::{
     future::ready,
-    sync::{Arc, Mutex, MutexGuard, PoisonError, atomic::{AtomicU64, Ordering::SeqCst}},
+    sync::{
+        Arc, Mutex, MutexGuard, PoisonError,
+        atomic::{AtomicU64, Ordering::SeqCst},
+    },
     time::{Duration, UNIX_EPOCH},
 };
 
 use nsh_logging::{
-    Backend, BackendFuture, FileStat, FakeBackend, LogEntry, Logging, LoggingError, LoggingOptions,
+    Backend, BackendFuture, FakeBackend, FileStat, LogEntry, Logging, LoggingError, LoggingOptions,
     Rotation,
 };
 
@@ -91,7 +94,12 @@ impl IntervalWriter {
             state.written = 0;
             state.roll = 0;
         }
-        let line = format!("{} {} {}\n", entry.level.name(), entry.time_ms, entry.message);
+        let line = format!(
+            "{} {} {}\n",
+            entry.level.name(),
+            entry.time_ms,
+            entry.message
+        );
         match self.family {
             Family::Predictive => place_predictive(&mut state, &line, now_ms, self.max_bytes),
             Family::RenameAside => place_aside(&mut state, &line, now_ms, self.max_bytes),
@@ -226,7 +234,10 @@ fn file_name_at(rotation: Rotation, prefix: &str, secs: i64) -> String {
                 time_of_day / SECS_PER_HOUR
             );
             if rotation == Rotation::Minutely {
-                format!("{name}-{:02}", time_of_day / SECS_PER_MINUTE % SECS_PER_MINUTE)
+                format!(
+                    "{name}-{:02}",
+                    time_of_day / SECS_PER_MINUTE % SECS_PER_MINUTE
+                )
             } else {
                 name
             }
@@ -238,7 +249,11 @@ fn file_name_at(rotation: Rotation, prefix: &str, secs: i64) -> String {
 /// proleptic Gregorian calendar tracing-appender's UTC clock names files by.
 fn civil_from_days(days: i64) -> (i64, u32, u32) {
     let shifted = days + 719_468;
-    let era = if shifted >= 0 { shifted } else { shifted - 146_096 } / 146_097;
+    let era = if shifted >= 0 {
+        shifted
+    } else {
+        shifted - 146_096
+    } / 146_097;
     let day_of_era = shifted - era * 146_097;
     let year_of_era =
         (day_of_era - day_of_era / 1460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
@@ -251,7 +266,11 @@ fn civil_from_days(days: i64) -> (i64, u32, u32) {
     } else {
         month_pattern - 9
     };
-    (if month <= 2 { year + 1 } else { year }, month as u32, day as u32)
+    (
+        if month <= 2 { year + 1 } else { year },
+        month as u32,
+        day as u32,
+    )
 }
 
 /// A stored file, as the directory snapshot answers it.
@@ -276,15 +295,26 @@ async fn time_rotation_rolls_to_a_new_file_at_the_interval() {
     );
     let mut options = options();
     options.rotation = Rotation::Minutely;
-    let logger = Logging::with_backend(writer.clone(), &options).await.unwrap();
+    let logger = Logging::with_backend(writer.clone(), &options)
+        .await
+        .unwrap();
 
     logger.info("before the boundary").await.unwrap();
     now.fetch_add(60_000, SeqCst);
     logger.info("after the boundary").await.unwrap();
 
-    assert_eq!(writer.names(), ["log.2020-02-29-13-05", "log.2020-02-29-13-06"]);
-    assert_eq!(writer.words_of("log.2020-02-29-13-05"), ["before the boundary"]);
-    assert_eq!(writer.words_of("log.2020-02-29-13-06"), ["after the boundary"]);
+    assert_eq!(
+        writer.names(),
+        ["log.2020-02-29-13-05", "log.2020-02-29-13-06"]
+    );
+    assert_eq!(
+        writer.words_of("log.2020-02-29-13-05"),
+        ["before the boundary"]
+    );
+    assert_eq!(
+        writer.words_of("log.2020-02-29-13-06"),
+        ["after the boundary"]
+    );
     assert_eq!(logger.logs().await.unwrap().len(), 2);
 }
 
@@ -298,7 +328,9 @@ async fn rotation_alone_bounds_nothing_until_caps_are_set() {
     ]);
     let mut options = options();
     options.rotation = Rotation::Minutely;
-    let logger = Logging::with_backend(backend.clone(), &options).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options)
+        .await
+        .unwrap();
 
     logger.info("a fifth file changes nothing").await.unwrap();
 
@@ -326,7 +358,9 @@ async fn size_cap_rolls_a_file_mid_interval() {
         Some(45),
         Family::Predictive,
     );
-    let logger = Logging::with_backend(predictive.clone(), &options).await.unwrap();
+    let logger = Logging::with_backend(predictive.clone(), &options)
+        .await
+        .unwrap();
     for message in ["first", "second", "third"] {
         logger.info(message).await.unwrap();
     }
@@ -345,7 +379,9 @@ async fn size_cap_rolls_a_file_mid_interval() {
         Some(45),
         Family::RenameAside,
     );
-    let logger = Logging::with_backend(aside.clone(), &options).await.unwrap();
+    let logger = Logging::with_backend(aside.clone(), &options)
+        .await
+        .unwrap();
     for message in ["first", "second", "third"] {
         logger.info(message).await.unwrap();
     }

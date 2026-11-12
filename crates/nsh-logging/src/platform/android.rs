@@ -28,7 +28,7 @@ use tracing_appender::{
 use crate::{
     backend::{Backend, BackendFuture, FileStat},
     error::{ErrorKind, LoggingError},
-    logging::{format_line, LogEntry},
+    logging::{LogEntry, format_line},
     options::{LoggingOptions, Rotation},
 };
 
@@ -80,7 +80,9 @@ impl SinkState {
     /// never a silent loss, and never the unblockable wait of a full-queue send.
     fn send(&mut self, bytes: &[u8]) -> Result<(), LoggingError> {
         let before = self.dropped.dropped_lines();
-        self.non_blocking.write_all(bytes).map_err(LoggingError::from_io)?;
+        self.non_blocking
+            .write_all(bytes)
+            .map_err(LoggingError::from_io)?;
         if self.dropped.dropped_lines() > before {
             return Err(LoggingError::new(ErrorKind::Backend));
         }
@@ -297,14 +299,13 @@ fn ensure_context() -> Result<(), LoggingError> {
     let vm = find_vm()?;
     // SAFETY: the pointer came from the runtime's own `JNI_GetCreatedJavaVMs`, and the VM
     // lives as long as the process.
-    let context = unsafe { JavaVM::from_raw(vm) }
-        .attach_current_thread(|env| {
-            let app = application(env)?;
-            // The global reference lives as long as the process, which is what
-            // `ndk-context` assumes.
-            let global = env.new_global_ref(app)?;
-            Ok::<_, LoggingError>(global.into_raw().cast::<c_void>())
-        })?;
+    let context = unsafe { JavaVM::from_raw(vm) }.attach_current_thread(|env| {
+        let app = application(env)?;
+        // The global reference lives as long as the process, which is what
+        // `ndk-context` assumes.
+        let global = env.new_global_ref(app)?;
+        Ok::<_, LoggingError>(global.into_raw().cast::<c_void>())
+    })?;
     // A concurrent installer can win the race with the probe above, and the initializer
     // then asserts; a caught install plus a re-probe adopts whatever landed instead of
     // panicking on this runtime path.

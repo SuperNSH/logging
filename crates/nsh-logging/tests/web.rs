@@ -45,8 +45,14 @@ async fn a_target_without_a_file_sink_reports_not_available() {
 
     let error = logger.info("nowhere to write").await.unwrap_err();
     assert_eq!(error.code(), "ERR_LOGGING_NOT_AVAILABLE");
-    assert_eq!(logger.clean().await.unwrap_err().code(), "ERR_LOGGING_NOT_AVAILABLE");
-    assert_eq!(logger.flush().await.unwrap_err().code(), "ERR_LOGGING_NOT_AVAILABLE");
+    assert_eq!(
+        logger.clean().await.unwrap_err().code(),
+        "ERR_LOGGING_NOT_AVAILABLE"
+    );
+    assert_eq!(
+        logger.flush().await.unwrap_err().code(),
+        "ERR_LOGGING_NOT_AVAILABLE"
+    );
 
     // History needs no storage, so reading it back stays an answer, an empty one.
     assert!(logger.logs().await.unwrap().is_empty());

@@ -25,10 +25,18 @@ async fn invalid_options_are_refused_with_the_invalid_argument_code() {
     empty_directory.directory = String::new();
 
     // TypeScript's negative cap is unrepresentable here: the field is an unsigned count.
-    let refused = [zero_file_cap, zero_total_cap, zero_timeout, blank_base_name, empty_directory];
+    let refused = [
+        zero_file_cap,
+        zero_total_cap,
+        zero_timeout,
+        blank_base_name,
+        empty_directory,
+    ];
     for invalid in refused {
         let backend = FakeBackend::new();
-        let error = Logging::with_backend(backend.clone(), &invalid).await.unwrap_err();
+        let error = Logging::with_backend(backend.clone(), &invalid)
+            .await
+            .unwrap_err();
         assert_eq!(error.kind(), ErrorKind::InvalidArgument);
         assert_eq!(error.code(), "ERR_LOGGING_INVALID_ARGUMENT");
         // The refusal happened before the sink was ever asked.
@@ -39,7 +47,9 @@ async fn invalid_options_are_refused_with_the_invalid_argument_code() {
     }
 
     let backend = FakeBackend::new();
-    Logging::with_backend(backend.clone(), &options()).await.unwrap();
+    Logging::with_backend(backend.clone(), &options())
+        .await
+        .unwrap();
     assert_eq!(backend.files_reads(), 0);
 }
 
@@ -48,7 +58,9 @@ async fn a_higher_construction_level_drops_lower_writes() {
     let backend = FakeBackend::new();
     let mut strict = options();
     strict.level = Level::Error;
-    let logger = Logging::with_backend(backend.clone(), &strict).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &strict)
+        .await
+        .unwrap();
 
     // Dropped writes resolve: the filter is not an error, and the backend sees nothing.
     logger.debug("quiet").await.unwrap();

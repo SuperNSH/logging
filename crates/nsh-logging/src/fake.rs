@@ -8,7 +8,7 @@ use std::{
 use crate::{
     backend::{Backend, BackendFuture, FileStat},
     error::LoggingError,
-    logging::{format_line, LogEntry},
+    logging::{LogEntry, format_line},
 };
 
 /// A backend whose failures the test scripts, whose lines the test reads, and whose calls

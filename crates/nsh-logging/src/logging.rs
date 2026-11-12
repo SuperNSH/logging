@@ -59,7 +59,11 @@ impl Shared {
         }
         let mut files = self.backend.files().await?;
         // Oldest first, ties by name, so what goes and what stays is deterministic.
-        files.sort_by(|a, b| a.modified.cmp(&b.modified).then_with(|| a.name.cmp(&b.name)));
+        files.sort_by(|a, b| {
+            a.modified
+                .cmp(&b.modified)
+                .then_with(|| a.name.cmp(&b.name))
+        });
         let mut total: u64 = files.iter().map(|file| file.size).sum();
         let mut doomed = Vec::new();
         for file in &files {
@@ -273,7 +277,9 @@ mod tests {
             level: Level::Error,
             ..options()
         };
-        let logger = Logging::with_backend(backend.clone(), &strict).await.unwrap();
+        let logger = Logging::with_backend(backend.clone(), &strict)
+            .await
+            .unwrap();
         logger.debug("quiet").await.unwrap();
         logger.error("loud").await.unwrap();
         assert_eq!(backend.appends(), 1);
@@ -287,7 +293,9 @@ mod tests {
     #[tokio::test]
     async fn a_failure_is_recorded_with_its_stack_and_clean_empties_the_logs() {
         let backend = FakeBackend::new();
-        let logger = Logging::with_backend(backend.clone(), &options()).await.unwrap();
+        let logger = Logging::with_backend(backend.clone(), &options())
+            .await
+            .unwrap();
         logger
             .log_exception(&LoggingError::new(ErrorKind::NotFound), Some("at payment"))
             .await

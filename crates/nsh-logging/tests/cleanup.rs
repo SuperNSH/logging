@@ -25,7 +25,9 @@ async fn max_total_size_bytes_deletes_the_oldest_files_first() {
     let backend = FakeBackend::new();
     let mut options = options();
     options.max_total_size_bytes = Some(120);
-    let logger = Logging::with_backend(backend.clone(), &options).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options)
+        .await
+        .unwrap();
     // The construction prune read an empty directory: one read, nothing to remove yet.
     assert_eq!(backend.files_reads(), 1);
 
@@ -41,7 +43,11 @@ async fn max_total_size_bytes_deletes_the_oldest_files_first() {
 
     assert_eq!(backend.removed(), ["log.2026-11-08"]);
     assert_eq!(backend.removes(), 1);
-    assert_eq!(backend.files_reads(), 2, "the caps ran again after the write");
+    assert_eq!(
+        backend.files_reads(),
+        2,
+        "the caps ran again after the write"
+    );
     assert_eq!(logger.logs().await.unwrap().len(), 1);
 }
 
@@ -50,7 +56,9 @@ async fn max_age_deletes_files_older_than_the_limit() {
     let backend = FakeBackend::new();
     let mut options = options();
     options.max_age = Some(Duration::from_millis(1_500));
-    let logger = Logging::with_backend(backend.clone(), &options).await.unwrap();
+    let logger = Logging::with_backend(backend.clone(), &options)
+        .await
+        .unwrap();
 
     backend.set_files(vec![
         stored("log.2026-11-09", 20, 500),

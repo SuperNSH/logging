@@ -20,10 +20,10 @@ mod linux;
     target_arch = "wasm32"
 )))]
 mod unsupported;
-#[cfg(target_os = "windows")]
-mod windows;
 #[cfg(target_arch = "wasm32")]
 mod web;
+#[cfg(target_os = "windows")]
+mod windows;
 
 use std::sync::Arc;
 
@@ -45,14 +45,12 @@ use linux::NativeBackend;
     target_arch = "wasm32"
 )))]
 use unsupported::NativeBackend;
-#[cfg(target_os = "windows")]
-use windows::NativeBackend;
 #[cfg(target_arch = "wasm32")]
 use web::NativeBackend;
+#[cfg(target_os = "windows")]
+use windows::NativeBackend;
 
 /// The backend of the target this build runs on.
-pub(crate) fn default_backend(
-    options: &LoggingOptions,
-) -> Result<Arc<dyn Backend>, LoggingError> {
+pub(crate) fn default_backend(options: &LoggingOptions) -> Result<Arc<dyn Backend>, LoggingError> {
     Ok(Arc::new(NativeBackend::new(options)?))
 }

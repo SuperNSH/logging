@@ -20,7 +20,7 @@ use tracing_appender::{
 use crate::{
     backend::{Backend, BackendFuture, FileStat},
     error::{ErrorKind, LoggingError},
-    logging::{format_line, LogEntry},
+    logging::{LogEntry, format_line},
     options::{LoggingOptions, Rotation},
 };
 
@@ -42,10 +42,10 @@ pub(crate) struct NativeBackend {
 }
 
 /// The writer's state. `non_blocking` hands lines to tracing-appender's worker thread and
-/// `guard` keeps that worker draining until the backend is dropped.
+/// `_guard` keeps that worker draining until the backend is dropped; it is held, never read.
 struct SinkState {
     non_blocking: NonBlocking,
-    guard: WorkerGuard,
+    _guard: WorkerGuard,
     /// The writer's drop counter, watched by [`SinkState::send`] so a full queue fails
     /// the write with a coded error instead of blocking or losing the line silently.
     dropped: ErrorCounter,
@@ -67,7 +67,9 @@ impl SinkState {
     /// never a silent loss, and never the unblockable wait of a full-queue send.
     fn send(&mut self, bytes: &[u8]) -> Result<(), LoggingError> {
         let before = self.dropped.dropped_lines();
-        self.non_blocking.write_all(bytes).map_err(LoggingError::from_io)?;
+        self.non_blocking
+            .write_all(bytes)
+            .map_err(LoggingError::from_io)?;
         if self.dropped.dropped_lines() > before {
             return Err(LoggingError::new(ErrorKind::Backend));
         }
@@ -248,10 +250,11 @@ fn start(
             appender: Arc::clone(&appender),
             signal: Arc::clone(signal),
         });
+    let dropped = non_blocking.error_counter();
     Ok(SinkState {
         non_blocking,
-        guard,
-        dropped: non_blocking.error_counter(),
+        _guard: guard,
+        dropped,
         appender,
         prefix: options.file_base_name.clone(),
         rotation: options.rotation,
@@ -307,7 +310,11 @@ fn init_error(error: InitError) -> LoggingError {
         .source()
         .and_then(|source| source.downcast_ref::<io::Error>())
     {
-        Some(error) => LoggingError::from_io(error.clone()),
+        // `io::Error` is not `Clone`; rebuild one carrying the kind and OS code `from_io` reads.
+        Some(error) => LoggingError::from_io(match error.raw_os_error() {
+            Some(code) => io::Error::from_raw_os_error(code),
+            None => io::Error::from(error.kind()),
+        }),
         None => LoggingError::new(ErrorKind::Backend),
     }
 }

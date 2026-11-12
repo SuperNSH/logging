@@ -91,7 +91,10 @@ fn mask_key_values(
 /// and digits as session ids and credentials look.
 fn mask_by_shape(input: &str, words: &[(usize, usize)], masked: &mut Vec<(usize, usize)>) {
     for &(start, end) in words {
-        if masked.iter().any(|&(from, until)| from <= start && start < until) {
+        if masked
+            .iter()
+            .any(|&(from, until)| from <= start && start < until)
+        {
             continue;
         }
         let word = &input[start..end];
@@ -117,7 +120,7 @@ fn is_email(word: &str) -> bool {
 
 fn is_random_looking(word: &str) -> bool {
     word.chars().count() >= RANDOM_LOOKING_MIN_CHARS
-        && word.chars().any(char::is_ascii_digit)
+        && word.chars().any(|c| c.is_ascii_digit())
         && word.chars().any(char::is_alphabetic)
 }
 
