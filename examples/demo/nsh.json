@@ -1,0 +1,8 @@
+{
+  "name": "Logging demo",
+  "id": "dev.supernsh.logging.demo",
+  "version": "0.1.0",
+  "build": 1,
+  "rust": "../../crates/nsh-logging",
+  "capabilities": {}
+}
