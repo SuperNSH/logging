@@ -22,12 +22,15 @@ export const workflow = {
       name: "logging",
       phases: ["implement", "audit", "unit-tests", "device-test", "vision", "smoke"],
       status: {
-        "implement": "not-started",
-        "audit": "not-started",
-        "unit-tests": "not-started",
-        "device-test": "not-started",
-        "vision": "not-started",
-        "smoke": "not-started",
+        "implement": "done",
+        "audit": "done",
+        "unit-tests": "done",
+        // CI has no device; the desktop runners exercise the same std::fs paths.
+        "device-test": "blocked",
+        // No vision rig exists in CI; screenshots of the demo are not compared.
+        "vision": "blocked",
+        // The demo app's UI test exercises the library end to end on every push.
+        "smoke": "done",
       },
     },
   ] satisfies Area[],
