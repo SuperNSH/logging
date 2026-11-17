@@ -10,7 +10,7 @@ use std::{
     ffi::OsStr,
     fs,
     future::ready,
-    io,
+    io::{self, Write},
     path::{Path, PathBuf},
     sync::{Mutex, MutexGuard, PoisonError},
     time::{SystemTime, UNIX_EPOCH},
@@ -83,6 +83,8 @@ impl NativeBackend {
         // What the directory already holds is owed from the start, so the first drain is
         // judged against the files earlier runs left too.
         state.handed = backend.bytes_on_disk()?;
+        // The guard borrows the backend, so it is released before the backend moves out.
+        drop(state);
         Ok(backend)
     }
 
@@ -191,7 +193,8 @@ impl NativeBackend {
         let mut files = Vec::new();
         for entry in fs::read_dir(&self.directory).map_err(LoggingError::from_io)? {
             let entry = entry.map_err(LoggingError::from_io)?;
-            let Some(name) = entry.file_name().to_str() else {
+            let file_name = entry.file_name();
+            let Some(name) = file_name.to_str() else {
                 // Not a name this backend writes; not one of its files either.
                 continue;
             };
@@ -282,7 +285,11 @@ fn init_error(error: InitError) -> LoggingError {
         .source()
         .and_then(|source| source.downcast_ref::<io::Error>())
     {
-        Some(error) => LoggingError::from_io(error.clone()),
+        // `io::Error` is not `Clone`; rebuild one carrying the kind and OS code `from_io` reads.
+        Some(error) => LoggingError::from_io(match error.raw_os_error() {
+            Some(code) => io::Error::from_raw_os_error(code),
+            None => io::Error::from(error.kind()),
+        }),
         None => LoggingError::new(ErrorKind::Backend),
     }
 }

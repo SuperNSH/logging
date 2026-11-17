@@ -35,7 +35,7 @@ impl Backend for NoFileSink {
     }
 }
 
-fn unavailable<T>() -> BackendFuture<'static, Result<T, LoggingError>> {
+fn unavailable<T: Send + 'static>() -> BackendFuture<'static, Result<T, LoggingError>> {
     Box::pin(ready(Err(LoggingError::new(ErrorKind::NotAvailable))))
 }
 

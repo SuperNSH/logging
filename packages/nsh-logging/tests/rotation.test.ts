@@ -21,7 +21,7 @@ function minuteStamp(prefix: string, timeMs: number): string {
  * `prefix.YYYY-MM-DD-HH-mm` file. The clock is injected, so tests cross boundaries.
  */
 abstract class IntervalWriter implements LoggingBackend {
-  protected readonly files = new Map<string, { size: number; timeMs: number; lines: string[] }>();
+  protected readonly stored = new Map<string, { size: number; timeMs: number; lines: string[] }>();
   protected base = "";
   protected written = 0;
 
@@ -50,7 +50,7 @@ abstract class IntervalWriter implements LoggingBackend {
 
   /** The named file, or a fresh one under this clock, for the caller to fill and set back. */
   protected take(name: string): { size: number; timeMs: number; lines: string[] } {
-    return this.files.get(name) ?? { size: 0, timeMs: this.clock(), lines: [] };
+    return this.stored.get(name) ?? { size: 0, timeMs: this.clock(), lines: [] };
   }
 
   flush = async (): Promise<void> => {};
@@ -58,7 +58,7 @@ abstract class IntervalWriter implements LoggingBackend {
   removeAll = async (): Promise<void> => {};
 
   files = async (): Promise<FileStat[]> =>
-    Array.from(this.files, ([name, file]) => ({
+    Array.from(this.stored, ([name, file]) => ({
       name,
       size: file.size,
       modifiedMs: file.timeMs,
@@ -66,11 +66,11 @@ abstract class IntervalWriter implements LoggingBackend {
 
   /** The rolled files, in the order this writer created them. */
   names(): string[] {
-    return Array.from(this.files.keys());
+    return Array.from(this.stored.keys());
   }
 
   linesOf(name: string): string[] {
-    return this.files.get(name)?.lines ?? [];
+    return this.stored.get(name)?.lines ?? [];
   }
 }
 
@@ -96,7 +96,7 @@ class PredictiveRollWriter extends IntervalWriter {
     const file = this.take(name);
     file.lines.push(line);
     file.size += line.length;
-    this.files.set(name, file);
+    this.stored.set(name, file);
   }
 }
 
@@ -106,21 +106,21 @@ class PredictiveRollWriter extends IntervalWriter {
  */
 class RenameAsideRollWriter extends IntervalWriter {
   protected place(line: string): void {
-    if (this.maxBytes !== undefined && this.written >= this.maxBytes && this.files.has(this.base)) {
+    if (this.maxBytes !== undefined && this.written >= this.maxBytes && this.stored.has(this.base)) {
       const aside = `${this.base}.${this.firstFreeIndex()}`;
-      this.files.set(aside, this.take(this.base));
-      this.files.delete(this.base);
+      this.stored.set(aside, this.take(this.base));
+      this.stored.delete(this.base);
       this.written = 0;
     }
     const file = this.take(this.base);
     file.lines.push(line);
     file.size += line.length;
-    this.files.set(this.base, file);
+    this.stored.set(this.base, file);
   }
 
   private firstFreeIndex(): number {
     for (let index = 1; ; index += 1) {
-      if (!this.files.has(`${this.base}.${index}`)) return index;
+      if (!this.stored.has(`${this.base}.${index}`)) return index;
     }
   }
 }

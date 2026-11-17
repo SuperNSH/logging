@@ -7,7 +7,8 @@ use std::{
 };
 
 use nsh_logging::{
-    Backend, BackendFuture, FileStat, Level, LogEntry, Logging, LoggingError, LoggingOptions,
+    Backend, BackendFuture, FakeBackend, FileStat, Level, LogEntry, Logging, LoggingError,
+    LoggingOptions,
 };
 
 /// The defaults behind a function, so a test's field assignments are not the

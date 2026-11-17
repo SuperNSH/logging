@@ -44,6 +44,6 @@ impl Backend for NativeBackend {
 }
 
 /// The one answer this backend has: file logs are not available here.
-fn unavailable<T>() -> BackendFuture<'static, Result<T, LoggingError>> {
+fn unavailable<T: Send + 'static>() -> BackendFuture<'static, Result<T, LoggingError>> {
     Box::pin(ready(Err(LoggingError::new(ErrorKind::NotAvailable))))
 }

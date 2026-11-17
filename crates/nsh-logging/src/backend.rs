@@ -6,8 +6,9 @@ use std::{future::Future, pin::Pin, time::SystemTime};
 
 use crate::{error::LoggingError, logging::LogEntry};
 
-/// A future a backend returns. Each call's future borrows the backend.
-pub type BackendFuture<'a, T> = Pin<Box<dyn Future<Output = T> + 'a>>;
+/// A future a backend returns. Each call's future borrows the backend, and is `Send` so a
+/// shared `Logging` can be called from a spawned task.
+pub type BackendFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
 /// One file of the directory snapshot, as the core's cleanup policy sees it.
 #[derive(Debug, Clone, PartialEq, Eq)]

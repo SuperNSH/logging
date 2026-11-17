@@ -11,9 +11,12 @@ use std::{
 
 use tokio::sync::Mutex as WriteGate;
 
+// ErrorKind is only named by the write timeout, which wasm32 compiles out.
+#[cfg(any(test, not(target_arch = "wasm32")))]
+use crate::error::ErrorKind;
 use crate::{
     backend::Backend,
-    error::{ErrorKind, LoggingError},
+    error::LoggingError,
     options::{Level, LoggingOptions},
     redact,
 };
@@ -91,6 +94,15 @@ impl Shared {
 #[derive(Clone)]
 pub struct Logging {
     shared: Arc<Shared>,
+}
+
+// The backend is a trait object with no Debug of its own, so only the options are shown.
+impl std::fmt::Debug for Logging {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Logging")
+            .field("options", &self.shared.options)
+            .finish_non_exhaustive()
+    }
 }
 
 impl Logging {

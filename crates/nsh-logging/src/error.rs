@@ -1,6 +1,9 @@
 //! The errors a log call reports. Each has a stable code; a message says what to do.
 
-use std::{fmt, io};
+use std::fmt;
+// Only the native file backends map io errors; the web has no file sink.
+#[cfg(any(test, not(target_arch = "wasm32")))]
+use std::io;
 
 /// What went wrong, as a stable code; see [`LoggingError::code`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -65,6 +68,7 @@ impl LoggingError {
     /// Maps one filesystem error, as every platform backend does: a missing file, denied
     /// access and a full disk keep their kind; anything else is `Backend` carrying the raw
     /// OS error code as the status.
+    #[cfg(any(test, not(target_arch = "wasm32")))]
     pub(crate) fn from_io(error: io::Error) -> Self {
         match error.kind() {
             io::ErrorKind::NotFound => Self::new(ErrorKind::NotFound),
@@ -118,6 +122,7 @@ impl fmt::Display for ErrorKind {
 }
 
 /// ENOSPC on unix and ERROR_DISK_FULL on windows: std's own mapping has not caught up.
+#[cfg(any(test, not(target_arch = "wasm32")))]
 fn disk_full(error: &io::Error) -> bool {
     match error.raw_os_error() {
         #[cfg(unix)]
