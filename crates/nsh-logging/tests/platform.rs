@@ -146,17 +146,18 @@ async fn the_real_size_cap_rolls_mid_interval() {
 
     // A line is 24 bytes this decade — "info ", a 13-digit stamp, a space, a 4-character
     // message, a newline — so a 50-byte cap holds two lines and the third rolls.
+    // The rows differ in length between the families, so the expected set is a Vec.
     #[cfg(target_vendor = "apple")]
-    let expected = [
-        ("log", ["m-01", "m-02"]),
-        ("log.1", ["m-03", "m-04"]),
-        ("log.2", ["m-05", "m-06"]),
+    let expected: Vec<(&str, Vec<&str>)> = vec![
+        ("log", vec!["m-01", "m-02"]),
+        ("log.1", vec!["m-03", "m-04"]),
+        ("log.2", vec!["m-05", "m-06"]),
     ];
     #[cfg(any(target_os = "linux", target_os = "windows"))]
-    let expected = [
-        ("log", ["m-07"]),
-        ("log.1", ["m-01", "m-02", "m-03"]),
-        ("log.2", ["m-04", "m-05", "m-06"]),
+    let expected: Vec<(&str, Vec<&str>)> = vec![
+        ("log", vec!["m-07"]),
+        ("log.1", vec!["m-01", "m-02", "m-03"]),
+        ("log.2", vec!["m-04", "m-05", "m-06"]),
     ];
 
     // A flush between writes puts the previous line in its file before the next roll
