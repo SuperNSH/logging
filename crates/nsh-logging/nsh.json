@@ -1,0 +1,8 @@
+{
+  "nsh": ">=0.6",
+  "exports": {
+    "nsh-logging": "tsx/index.ts",
+    "nsh-logging/rust": "tsx/rust.ts",
+    "nsh-logging/memory": "tsx/memory.ts"
+  }
+}

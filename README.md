@@ -4,6 +4,18 @@ Local log files with rotation, bounded disk use and redaction.
 
 Part of the Native Shell (NSH) capability set. Same layout as the other SuperNSH repos: a Rust crate and a TypeScript package, docs in `docs/`, CI on GitHub Actions, and a demo app shipped as nine downloadable builds and a web page on every push to `master`.
 
+## Install
+
+In the app's directory:
+
+```sh
+nsh add nsh-logging
+```
+
+`nsh add` needs NSH main or the nightly: the 0.6.0 and 0.6.1 releases do not have it. In a Rust app, `cargo add nsh-logging` works with any of them.
+
+In TSX, import from `nsh-logging`, `nsh-logging/rust` and `nsh-logging/memory`.
+
 ## Status
 
 **Implemented, and proven by CI on `master`.** The `format`, `rust`, `cross-check` and `typescript` jobs build and test the crate, the package and the demo app on every push; the `demo`, `publish` and `pages` jobs ship fresh builds with every push to `master`. What the runners prove: the edge-case tests in both languages, and the real-file platform tests — `crates/nsh-logging/tests/platform.rs` drives the real `Logging::new` through writes, flushes, the drop-flush and the mid-interval size roll on ubuntu, macos and windows. What they do not: iOS and Android are compile-checked only (Clippy per target — CI has no device, and the desktop runners run the same `std::fs` file code), and no runner fills its disk or refuses a directory; those failures are scripted through `FakeBackend` and `memoryBackend`. Read [docs/goals.md](docs/goals.md) for the goals, the error model and the edge cases, [docs/decisions.md](docs/decisions.md) for why each choice was made, and [docs/parity.md](docs/parity.md) for what is done.
