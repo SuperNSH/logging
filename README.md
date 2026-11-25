@@ -12,7 +12,7 @@ In the app's directory:
 nsh add nsh-logging
 ```
 
-`nsh add` needs NSH main or the nightly: the 0.6.0 and 0.6.1 releases do not have it. In a Rust app, `cargo add nsh-logging` works with any of them.
+`nsh add` needs NSH 0.7.0 or later: the 0.6.0 and 0.6.1 releases do not have it. In a Rust app, `cargo add nsh-logging` pulls in nsh-core 0.7.
 
 In TSX, import from `nsh-logging`, `nsh-logging/rust` and `nsh-logging/memory`.
 
@@ -65,7 +65,7 @@ CI runs on every push to `master` and on pull requests. Every compile and test r
 - **format**: `cargo fmt --all -- --check`.
 - **rust** on ubuntu, macos and windows: Clippy with `-D warnings` over all targets and features, then `cargo test --all-features --no-fail-fast`. The tests write real files on each runner's own filesystem through the real `Logging::new`, which is the same `std::fs` code iOS and Android run.
 - **cross-check**: Clippy for `aarch64-apple-ios` and `aarch64-apple-ios-sim` on macOS, `aarch64-linux-android` on Ubuntu with the NDK toolchain, and `wasm32-unknown-unknown` on Ubuntu, each with `--all-features -- -D warnings`.
-- **typescript**: installs NSH 0.6.0 from nsh.dev and, for both `packages/nsh-logging` and `examples/demo`, runs `nsh check`, `nsh build` failing on any warning, and `nsh test`.
+- **typescript**: installs NSH 0.7.1 from nsh.dev and, for both `packages/nsh-logging` and `examples/demo`, runs `nsh check`, `nsh build` failing on any warning, and `nsh test`.
 - **demo**, on `master` only: packages `examples/demo` for macOS, Linux and Windows on both x86_64 and arm64, plus the iOS simulator, Android (arm64-v8a) and the web, and uploads the nine builds as artifacts named `logging-demo-<name>`.
 - **publish**, on `master` only: replaces the `latest` GitHub release with those nine builds (the downloads in [Try the demo](#try-the-demo)).
 - **pages**, on `master` only: deploys the demo's web build to GitHub Pages at https://supernsh.github.io/logging/, from the same artifact the release takes.
