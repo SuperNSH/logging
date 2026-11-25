@@ -14,7 +14,7 @@ On 2026-11-09 all five reference repositories were cloned successfully into `.re
 
 ### NSH version 0.7.1
 
-The TypeScript package is built and tested with NSH 0.7.1 exactly (`NSH_VERSION: v0.7.1` in the typescript and demo jobs, installed by the official installer at nsh.dev). It started on 0.4.0, the version the org template's CI pinned, moved to 0.5.0 with the SuperNSH set on 2026-11-11, and to 0.5.1 on 2026-11-17, to 0.6.0 on 2026-11-18, and to 0.7.1 on 2026-11-25. The released CLI is what CI installs and what an NSH app runs today, so parity with it is what the `typescript` job proves; native features that exist only on NSH's unreleased `main` are not used. The Rust crate's `nsh-core` dependency is `0.7.0` for the same reason.
+The TypeScript package is built and tested with NSH 0.7.1 exactly (`NSH_VERSION: v0.7.1` in the typescript and demo jobs, installed by the official installer at nsh.dev). It started on 0.4.0, the version the org template's CI pinned, moved to 0.5.0 with the SuperNSH set on 2026-11-11, and to 0.5.1 on 2026-11-17, to 0.6.0 on 2026-11-18, and to 0.7.1 on 2026-11-25. The released CLI is what CI installs and what an NSH app runs today, so parity with it is what the `typescript` job proves; native features that exist only on NSH's unreleased `main` are not used. The Rust crate's `nsh-core` dependency is `0.7.1` for the same reason.
 
 ### Library choice: tracing-appender and std::fs
 
@@ -22,7 +22,7 @@ The TypeScript package is built and tested with NSH 0.7.1 exactly (`NSH_VERSION:
 
 ### Dependency versions
 
-The crate manifest is written (`crates/nsh-logging/Cargo.toml`) and carries: `nsh-core` 0.7.0, `thiserror` 2.0.21, `tokio` 1.54.1 (with `sync` and `time`), `tracing-appender` 0.2.5 — held off `wasm32`, where its `symlink` dependency has no story and the web has no file sink — and, on Android only, `jni` 0.22.4 with `ndk-context` 0.1.1, where the app's log directory comes from its context over JNI. These are caret requirements, not exact pins: each names the least release that works, and any semver-compatible one resolves. `Cargo.lock` is not committed, so each CI run resolves the newest matching release — which is also why no version here counts as verified until a green run exists. `nsh-core`, `thiserror`, `tokio`, `jni` and `ndk-context` match the org template's crate, measured there on 2026-11-07.
+The crate manifest is written (`crates/nsh-logging/Cargo.toml`) and carries: `nsh-core` 0.7.1, `thiserror` 2.0.21, `tokio` 1.54.1 (with `sync` and `time`), `tracing-appender` 0.2.5 — held off `wasm32`, where its `symlink` dependency has no story and the web has no file sink — and, on Android only, `jni` 0.22.4 with `ndk-context` 0.1.1, where the app's log directory comes from its context over JNI. These are caret requirements, not exact pins: each names the least release that works, and any semver-compatible one resolves. `Cargo.lock` is not committed, so each CI run resolves the newest matching release — which is also why no version here counts as verified until a green run exists. `nsh-core`, `thiserror`, `tokio`, `jni` and `ndk-context` match the org template's crate, measured there on 2026-11-07.
 
 ### Platforms in scope
 

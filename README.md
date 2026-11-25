@@ -12,7 +12,7 @@ In the app's directory:
 nsh add nsh-logging
 ```
 
-`nsh add` needs NSH 0.7.0 or later: the 0.6.0 and 0.6.1 releases do not have it. In a Rust app, `cargo add nsh-logging` pulls in nsh-core 0.7.
+Needs NSH 0.7.1 or later. In a Rust app, `cargo add nsh-logging` pulls in nsh-core 0.7.
 
 In TSX, import from `nsh-logging`, `nsh-logging/rust` and `nsh-logging/memory`.
 
